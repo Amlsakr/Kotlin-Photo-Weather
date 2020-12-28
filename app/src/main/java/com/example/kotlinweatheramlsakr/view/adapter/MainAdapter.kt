@@ -7,17 +7,17 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.kotlinweatheramlsakr.databinding.RecyclerItemViewBinding
 
-class MainAdapter(
-    var pictureItems: List<Uri>,
-    var recyclerViewItemClickListener: RecyclerViewItemClickListener
+class MainAdapter(var recyclerViewItemClickListener: RecyclerViewItemClickListener
 ): RecyclerView.Adapter<MainAdapter.ViewHolder>() {
 
-     inner   class ViewHolder(var recyclerItemViewBinding: RecyclerItemViewBinding) :
+     var pictureItems: List<Uri> = listOf<Uri>()
+
+    inner   class ViewHolder(var recyclerItemViewBinding: RecyclerItemViewBinding) :
         RecyclerView.ViewHolder(recyclerItemViewBinding.getRoot()) {
         init {
             recyclerItemViewBinding.recyclerViewIV.setOnClickListener(View.OnClickListener {
                 recyclerViewItemClickListener.onClick(
-                    adapterPosition
+                    pictureItems.get(adapterPosition)
                 )
             })
         }
@@ -34,4 +34,6 @@ class MainAdapter(
      }
 
      override fun getItemCount() = pictureItems.size
+
+
  }

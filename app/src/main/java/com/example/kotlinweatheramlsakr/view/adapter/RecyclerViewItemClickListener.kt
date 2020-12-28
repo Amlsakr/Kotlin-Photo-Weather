@@ -1,5 +1,7 @@
 package com.example.kotlinweatheramlsakr.view.adapter
 
+import android.net.Uri
+
 interface RecyclerViewItemClickListener {
-    fun onClick(position: Int)
+    fun onClick(imageUri: Uri)
 }

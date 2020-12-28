@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Kotlin Weather Aml Sakr</string>
+    <string name="app_name">KotlinWeatherAmlSakr</string>
     <string name="launch_activity">Launch activity</string>
     <string name="location_unknown">Location unknown</string>
     <string name="location_updates_label">Location Updates</string>

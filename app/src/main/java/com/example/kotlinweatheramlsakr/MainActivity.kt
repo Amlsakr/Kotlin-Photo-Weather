@@ -13,7 +13,9 @@ import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Log
 import android.view.View
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.kotlinweatheramlsakr.data.PermissionHandler
@@ -40,9 +42,8 @@ class MainActivity : AppCompatActivity(), RecyclerViewItemClickListener {
     private val TAG = MainActivity::class.java.simpleName
     protected lateinit var mLastLocation: Location
    private lateinit var binding: ActivityMainBinding
-    var imageUries: List<Uri> = ArrayList()
   private lateinit var locationRequest: LocationRequest
-    private lateinit var mainViewModel: MainViewModel
+    private  val mainViewModel: MainViewModel by viewModels()
     private var placeName: String = ""
     private var temperature = 0.0
     private var condition: String = ""
@@ -67,7 +68,6 @@ class MainActivity : AppCompatActivity(), RecyclerViewItemClickListener {
     }
 
     private fun initObjects() {
-        mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
         permissionHandler = PermissionHandler(this)
         writeImage = WriteImage(this)
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
@@ -113,11 +113,18 @@ class MainActivity : AppCompatActivity(), RecyclerViewItemClickListener {
         if (!permissionHandler.checkWriteToStoragePermission()) {
             permissionHandler.requestWriteToStoragePermission()
         } else {
-            imageUries = getImages(this)
-            mainAdapter = MainAdapter(imageUries, this)
+
+               mainViewModel.loadImages()
+            mainAdapter = MainAdapter( this)
             binding.recyclerView.layoutManager = GridLayoutManager(applicationContext, 2)
             binding.recyclerView.adapter = mainAdapter
             mainAdapter.notifyDataSetChanged()
+               mainViewModel.images.observe(this , Observer<List<Uri>>{
+                   images ->
+                   mainAdapter.pictureItems = images
+                   mainAdapter.notifyDataSetChanged()
+               })
+
         }
     }
 
@@ -133,9 +140,6 @@ class MainActivity : AppCompatActivity(), RecyclerViewItemClickListener {
     private fun stopLocationUpdates() {
         mFusedLocationClient.removeLocationUpdates(locationCallback)
     }
-    override fun onStart() {
-        super.onStart()
-    }
 
     override fun onStop() {
         super.onStop()
@@ -144,6 +148,7 @@ class MainActivity : AppCompatActivity(), RecyclerViewItemClickListener {
     fun takePhoto(view: View) {
         startLocationUpdates()
         getLastLocation()
+
         val call: Call<Response> = mainViewModel.getData(latitude, longitude)
         Log.e(TAG , call.request().url().toString())
         call.enqueue(object : Callback<Response> {
@@ -206,11 +211,12 @@ class MainActivity : AppCompatActivity(), RecyclerViewItemClickListener {
             }
         } else if (requestCode == REQUEST_PERMISSIONS_READ_STORAGE_CODE) {
             if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                imageUries = getImages(this)
-                mainAdapter = MainAdapter(imageUries, this)
-                binding.recyclerView.layoutManager = GridLayoutManager(applicationContext, 2)
-                binding.recyclerView.adapter = mainAdapter
-                mainAdapter.notifyDataSetChanged()
+                mainViewModel.loadImages()
+//                imageUries = getImages(this)
+//                mainAdapter = MainAdapter(imageUries, this)
+//                binding.recyclerView.layoutManager = GridLayoutManager(applicationContext, 2)
+//                binding.recyclerView.adapter = mainAdapter
+//                mainAdapter.notifyDataSetChanged()
             }
         }
 
@@ -227,9 +233,9 @@ class MainActivity : AppCompatActivity(), RecyclerViewItemClickListener {
             writeImage.saveImage(bitmap!!)
         }
     }
-    override fun onClick(position: Int) {
+    override fun onClick(imageUri: Uri) {
         val intent = Intent(this, DetailsActivity::class.java)
-        intent.putExtra("uri", imageUries[position].toString())
+        intent.putExtra("uri", imageUri)
         startActivity(intent)
     }
 

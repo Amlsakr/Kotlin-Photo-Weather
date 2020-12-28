@@ -6,6 +6,7 @@ import android.graphics.*
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import com.example.kotlinweatheramlsakr.R
 import java.io.File
 import java.io.FileNotFoundException
@@ -26,6 +27,7 @@ class WriteImage (var context : Context) {
             values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/" + context.getString(R.string.app_name))
             values.put(MediaStore.Images.Media.IS_PENDING, true)
             val uri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            Log.e("saveuri", uri.toString())
             if (uri != null) {
                 try {
                     saveImageToStream(bitmap, context.contentResolver.openOutputStream(uri))
