@@ -16,40 +16,34 @@ import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
-import com.example.kotlinweatheramlsakr.data.PermissionHandler
-import com.example.kotlinweatheramlsakr.data.PermissionHandler.Companion.REQUEST_PERMISSIONS_LOCATION_CODE
-import com.example.kotlinweatheramlsakr.data.PermissionHandler.Companion.REQUEST_PERMISSIONS_READ_STORAGE_CODE
-import com.example.kotlinweatheramlsakr.data.PermissionHandler.Companion.REQUEST_PERMISSIONS_WRITE_STORAGE_CODE
-import com.example.kotlinweatheramlsakr.data.storage.ReadImage.Companion.getImages
-import com.example.kotlinweatheramlsakr.data.storage.WriteImage
+import com.example.kotlinweatheramlsakr.view.PermissionHandler
+import com.example.kotlinweatheramlsakr.view.PermissionHandler.Companion.REQUEST_PERMISSIONS_LOCATION_CODE
+import com.example.kotlinweatheramlsakr.view.PermissionHandler.Companion.REQUEST_PERMISSIONS_READ_STORAGE_CODE
+import com.example.kotlinweatheramlsakr.view.PermissionHandler.Companion.REQUEST_PERMISSIONS_WRITE_STORAGE_CODE
 import com.example.kotlinweatheramlsakr.databinding.ActivityMainBinding
 import com.example.kotlinweatheramlsakr.view.DetailsActivity
 import com.example.kotlinweatheramlsakr.view.adapter.MainAdapter
 import com.example.kotlinweatheramlsakr.view.adapter.RecyclerViewItemClickListener
 import com.example.kotlinweatheramlsakr.viewModel.MainViewModel
-import com.example.kotlinweatheramlsakr.weatherResponseModel.Response
+import com.example.kotlinweatheramlsakr.data.weatherResponseModel.Response
 import com.google.android.gms.location.*
 import com.google.android.material.snackbar.Snackbar
-import retrofit2.Call
-import retrofit2.Callback
-import java.util.*
 
 class MainActivity : AppCompatActivity(), RecyclerViewItemClickListener {
 
     val REQUEST_IMAGE_CAPTURE = 1
     private val TAG = MainActivity::class.java.simpleName
     protected lateinit var mLastLocation: Location
-   private lateinit var binding: ActivityMainBinding
-  private lateinit var locationRequest: LocationRequest
-    private  val mainViewModel: MainViewModel by viewModels()
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var locationRequest: LocationRequest
+    private val mainViewModel: MainViewModel by viewModels()
     private var placeName: String = ""
     private var temperature = 0.0
     private var condition: String = ""
-    private lateinit var  mainAdapter: MainAdapter
+    private lateinit var mainAdapter: MainAdapter
     private lateinit var permissionHandler: PermissionHandler
-    private lateinit var writeImage: WriteImage
+   // private lateinit var writeImage: WriteImage
     private lateinit var mFusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private var latitude = 0.0
@@ -64,12 +58,12 @@ class MainActivity : AppCompatActivity(), RecyclerViewItemClickListener {
             permissionHandler.requestLocationPermission()
         } else {
             getLastLocation()
+
         }
     }
 
     private fun initObjects() {
         permissionHandler = PermissionHandler(this)
-        writeImage = WriteImage(this)
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
@@ -113,17 +107,23 @@ class MainActivity : AppCompatActivity(), RecyclerViewItemClickListener {
         if (!permissionHandler.checkWriteToStoragePermission()) {
             permissionHandler.requestWriteToStoragePermission()
         } else {
+            mainViewModel.getData(latitude, longitude)
+            mainViewModel.weatherData.observe(this, Observer<Response> { response ->
+                placeName = response.name.toString()
+                temperature = response.main?.temp!!
+                condition = response.weather?.get(0)?.description!!
 
-               mainViewModel.loadImages()
-            mainAdapter = MainAdapter( this)
+            })
+
+            mainViewModel.loadImages()
+            mainAdapter = MainAdapter(this)
             binding.recyclerView.layoutManager = GridLayoutManager(applicationContext, 2)
             binding.recyclerView.adapter = mainAdapter
             mainAdapter.notifyDataSetChanged()
-               mainViewModel.images.observe(this , Observer<List<Uri>>{
-                   images ->
-                   mainAdapter.pictureItems = images
-                   mainAdapter.notifyDataSetChanged()
-               })
+            mainViewModel.images.observe(this, Observer<List<Uri>> { images ->
+                mainAdapter.pictureItems = images
+                mainAdapter.notifyDataSetChanged()
+            })
 
         }
     }
@@ -137,6 +137,7 @@ class MainActivity : AppCompatActivity(), RecyclerViewItemClickListener {
         )
 
     }
+
     private fun stopLocationUpdates() {
         mFusedLocationClient.removeLocationUpdates(locationCallback)
     }
@@ -145,40 +146,25 @@ class MainActivity : AppCompatActivity(), RecyclerViewItemClickListener {
         super.onStop()
         stopLocationUpdates()
     }
+
     fun takePhoto(view: View) {
         startLocationUpdates()
         getLastLocation()
 
-        val call: Call<Response> = mainViewModel.getData(latitude, longitude)
-        Log.e(TAG , call.request().url().toString())
-        call.enqueue(object : Callback<Response> {
-            override fun onResponse(call: Call<Response>, response: retrofit2.Response<Response>) {
-                placeName = response.body()?.name.toString()
-                temperature = response.body()?.main?.temp!!
-                condition = response.body()?.weather?.get(0)?.description!!
-                Log.e(TAG, placeName + temperature + condition)
+        if (::mLastLocation.isInitialized) {
+            if (!permissionHandler.checkWriteToStoragePermission()) {
+                permissionHandler.requestWriteToStoragePermission()
+            } else {
+                val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+                try {
+                    startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
+                } catch (e: ActivityNotFoundException) {
+                }
             }
-
-            override fun onFailure(call: Call<Response>, t: Throwable) {
-                Log.e(TAG , t.message.toString())
-                t.printStackTrace()
-            }
-
-        })
-
-
-        if (!permissionHandler.checkWriteToStoragePermission()) {
-            permissionHandler.requestWriteToStoragePermission()
         } else {
-            val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-            try {
-                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
-            } catch (e: ActivityNotFoundException) {
-            }
+            showSnackbar("Sorry, We Can not detect your location")
         }
     }
-
-
 
 
     override fun onRequestPermissionsResult(
@@ -212,11 +198,6 @@ class MainActivity : AppCompatActivity(), RecyclerViewItemClickListener {
         } else if (requestCode == REQUEST_PERMISSIONS_READ_STORAGE_CODE) {
             if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 mainViewModel.loadImages()
-//                imageUries = getImages(this)
-//                mainAdapter = MainAdapter(imageUries, this)
-//                binding.recyclerView.layoutManager = GridLayoutManager(applicationContext, 2)
-//                binding.recyclerView.adapter = mainAdapter
-//                mainAdapter.notifyDataSetChanged()
             }
         }
 
@@ -224,16 +205,18 @@ class MainActivity : AppCompatActivity(), RecyclerViewItemClickListener {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK && data != null) {
             val extras = data!!.extras
             val imageBitmap = extras!!["data"] as Bitmap?
-            val bitmap =
-                writeImage.writeTextOnDrawable(imageBitmap, placeName, temperature, condition)
-            writeImage.saveImage(bitmap!!)
+            if (placeName != null && condition != null && temperature != null) {
+                val bitmap =
+                    mainViewModel.writeTextOnDrawable(imageBitmap!!, placeName, temperature, condition)
+                mainViewModel.saveImage(bitmap!!)
+            }
         }
     }
-    override fun onClick(imageUri: Uri) {
+
+    override fun onClick(imageUri: String) {
         val intent = Intent(this, DetailsActivity::class.java)
         intent.putExtra("uri", imageUri)
         startActivity(intent)
@@ -245,7 +228,7 @@ class MainActivity : AppCompatActivity(), RecyclerViewItemClickListener {
             Snackbar.make(
                 findViewById(R.id.activity_main),
                 text,
-                Snackbar.LENGTH_INDEFINITE
+                Snackbar.LENGTH_LONG
             )
                 .setAction(R.string.settings) {
                     val intent = Intent()

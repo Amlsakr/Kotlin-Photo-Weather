@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.kotlinweatheramlsakr.databinding.RecyclerItemViewBinding
 
 class MainAdapter(var recyclerViewItemClickListener: RecyclerViewItemClickListener
@@ -17,7 +18,7 @@ class MainAdapter(var recyclerViewItemClickListener: RecyclerViewItemClickListen
         init {
             recyclerItemViewBinding.recyclerViewIV.setOnClickListener(View.OnClickListener {
                 recyclerViewItemClickListener.onClick(
-                    pictureItems.get(adapterPosition)
+                    pictureItems.get(adapterPosition).toString()
                 )
             })
         }
@@ -30,7 +31,10 @@ class MainAdapter(var recyclerViewItemClickListener: RecyclerViewItemClickListen
      }
 
      override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-         holder.recyclerItemViewBinding.recyclerViewIV.setImageURI(pictureItems[position])
+        holder.recyclerItemViewBinding.recyclerViewIV.setImageURI(pictureItems[position])
+
+
+
      }
 
      override fun getItemCount() = pictureItems.size

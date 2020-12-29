@@ -1,4 +1,4 @@
-package com.example.kotlinweatheramlsakr.data
+package com.example.kotlinweatheramlsakr.view
 
 import android.Manifest
 import android.app.Activity

@@ -1,4 +1,4 @@
-package com.example.kotlinweatheramlsakr.weatherResponseModel
+package com.example.kotlinweatheramlsakr.data.weatherResponseModel
 
 import com.google.gson.annotations.SerializedName
 

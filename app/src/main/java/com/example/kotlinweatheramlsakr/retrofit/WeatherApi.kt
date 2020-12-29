@@ -1,6 +1,6 @@
 package com.example.kotlinweatheramlsakr.retrofit
 
-import com.example.kotlinweatheramlsakr.weatherResponseModel.Response
+import com.example.kotlinweatheramlsakr.data.weatherResponseModel.Response
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Headers

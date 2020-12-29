@@ -1,7 +1,7 @@
 package com.example.kotlinweatheramlsakr.retrofit
 
 import com.example.kotlinweatheramlsakr.BuildConfig
-import com.example.kotlinweatheramlsakr.weatherResponseModel.Response
+import com.example.kotlinweatheramlsakr.data.weatherResponseModel.Response
 import com.google.gson.GsonBuilder
 import retrofit2.Call
 import retrofit2.Retrofit
