@@ -21,10 +21,9 @@ import java.util.*
 class ReadImage {
 
     companion object {
-        fun getImages(activity: Application): List<Uri> {
+        fun getImages(activity: Application): MutableList<Uri> {
             val path = File(Environment.getExternalStorageDirectory().toString() + '/' + activity.getString(R.string.app_name))
-            var imageUris: MutableList<Uri> = ArrayList()
-
+            var imageUris: MutableList<Uri> = mutableListOf()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 imageUris = queryImages(activity)
             }
@@ -34,8 +33,6 @@ class ReadImage {
             }
             if (fileNames != null) {
                 for (i in fileNames.indices) {
-
-                    ///Now set this bitmap on imageview
                     imageUris.add(Uri.parse(path.toString() + "/" + fileNames[i]))
                 }
             }
@@ -51,10 +48,7 @@ class ReadImage {
                         MediaStore.Images.Media.BUCKET_DISPLAY_NAME,
                         MediaStore.Images.Media.DATE_ADDED,
                         MediaStore.Images.Media.RELATIVE_PATH)
-          //      val  selection = "${MediaStore.Images.Media.DATE_TAKEN} >= ?"
               val  selection = "${MediaStore.MediaColumns.RELATIVE_PATH}   LIKE ? "
-
-          //    val selectionArgs = arrayOf(dateToTimestamp(day = 1 ,month = 1 , year = 2020).toString())
            val selectionArgs =  arrayOf("%Pictures/" + "KotlinWeatherAmlSakr%")
                 val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} DESC"
                        activity.contentResolver.query(
@@ -83,26 +77,16 @@ class ReadImage {
             while (cursor.moveToNext()) {
 
                 val id = cursor.getLong(idColumn)
-                val dateTaken = Date(cursor.getLong(dateTakenColumn))
-                val displayName = cursor.getString(displayNameColumn)
                 val path = cursor.getString(relativePath)
                 Log.e("path", path)
                 val contentUri = ContentUris.withAppendedId(
                         MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-
-
-              //  val image = Image(id, displayName, dateTaken, contentUri)
                 images += contentUri
 
             }
             return images
         }
 
-        @Suppress("SameParameterValue")
-        @SuppressLint("SimpleDateFormat")
-        private fun dateToTimestamp(day: Int, month: Int, year: Int): Long =
-                SimpleDateFormat("dd.MM.yyyy").let { formatter ->
-                    formatter.parse("$day.$month.$year")?.time ?: 0
-                }
+
     }
 }
